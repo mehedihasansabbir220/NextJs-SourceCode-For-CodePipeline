@@ -1,47 +1,88 @@
-# TypeScript Next.js example
+#=======================================================================================================
 
-This is a really simple project that shows the usage of Next.js with TypeScript.
+One Refrences:
 
-## Deploy your own
+https://github.com/mehedihasansabbir220/NextJs-SourceCode-For-CodePipeline.git
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=next-example) or preview live with [StackBlitz](https://stackblitz.com/github/vercel/next.js/tree/canary/examples/with-typescript)
+#=======================================================================================================
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/vercel/next.js/tree/canary/examples/with-typescript&project-name=with-typescript&repository-name=with-typescript)
+1. Create IAM Role for EC2 and AWS CodeDeploy
 
-## How to use it?
+EC2RoleForS3
+CodeDeployRole
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init), [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/), or [pnpm](https://pnpm.io) to bootstrap the example:
+2. Create EC2 Instance and Attach that EC2 role.
 
-```bash
-npx create-next-app --example with-typescript with-typescript-app
-```
+and install code depoloy agent
 
-```bash
-yarn create next-app --example with-typescript with-typescript-app
-```
+sudo yum update
+sudo yum install ruby
+sudo yum install wget
+wget https://aws-codedeploy-us-east-1.s3.amazonaws.com/latest/install
+chmod +x ./install
+sudo ./install auto
 
-```bash
-pnpm create next-app --example with-typescript with-typescript-app
-```
+3. aws codepipeline following steps:
 
-Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=next-example) ([Documentation](https://nextjs.org/docs/deployment)).
+Step 1: CodePipeline
+Step 2: Code Source (CodeCommit or Github)
+Step 3: Skip Build(Feature)
+Step 4: Choose Code Depoloy
 
-## Notes
+p
 
-This example shows how to integrate the TypeScript type system into Next.js. Since TypeScript is supported out of the box with Next.js, all we have to do is to install TypeScript.
+:W
 
-```
-npm install --save-dev typescript
-```
+#=======================================================================================================
 
-To enable TypeScript's features, we install the type declarations for React and Node.
+Appspec.yml file structure:
 
-```
-npm install --save-dev @types/react @types/react-dom @types/node
-```
+---
 
-When we run `next dev` the next time, Next.js will start looking for any `.ts` or `.tsx` files in our project and builds it. It even automatically creates a `tsconfig.json` file for our project with the recommended settings.
+## appspec.yml
 
-Next.js has built-in TypeScript declarations, so we'll get autocompletion for Next.js' modules straight away.
+version: 0.0
+os: linux
+files:
 
-A `type-check` script is also added to `package.json`, which runs TypeScript's `tsc` CLI in `noEmit` mode to run type-checking separately. You can then include this, for example, in your `test` scripts.
+- source: /
+  destination: /home/ec2-user/server
+  hooks:
+  AfterInstall: - location: afterinstall.sh
+  timeout: 300
+  ApplicationStart: - location: applicationstart.sh
+  timeout: 300
+
+---
+
+## afterinstall.sh
+
+#!/bin/bash
+
+cd /home/ec2-user/server
+curl -sL https://rpm.nodesource.com/setup_14.x | sudo -E bash -
+yum -y install nodejs npm
+
+#Remove Unused Code
+
+rm -rf node_modules
+rm -rf build
+
+#Install node_modules & Make Build and install PM2
+
+npm -f install
+npm run build
+npm install -g pm2
+
+---
+
+## applicationstart.sh
+
+#!/bin/bash
+
+cd /home/ec2-user/server
+sudo pm2 delete Frontend
+sudo pm2 start server.js --name Frontend
+
+#=======================================================================================================
+"# NextJs-SourceCode-For-CodePipeline" 
